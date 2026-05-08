@@ -2,3 +2,5 @@ config/.env
 venv/
 __pycache__/
 *pyc
+config/user_config.json
+logs/

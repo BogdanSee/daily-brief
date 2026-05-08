@@ -8,4 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 COPY config/ ./config/
 
-CMD ["python3", "src/main.py"]
+ENV PYTHONUNBUFFERED=1
+
+ENTRYPOINT ["python3", "src/main.py"]
+CMD ["morning"]
