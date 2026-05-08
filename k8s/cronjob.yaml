@@ -16,6 +16,13 @@ spec:
             envFrom:
             - secretRef:
                 name: daily-brief-secret
+            volumeMounts:
+            - name: user-config
+              mountPath: /app/config
+          volumes:
+          - name: user-config
+            persistentVolumeClaim:
+              claimName: daily-brief-config-pvc
           restartPolicy: OnFailure
 ---
 apiVersion: batch/v1
@@ -36,6 +43,13 @@ spec:
             envFrom:
             - secretRef:
                 name: daily-brief-secret
+            volumeMounts:
+            - name: user-config
+              mountPath: /app/config
+          volumes:
+          - name: user-config
+            persistentVolumeClaim:
+              claimName: daily-brief-config-pvc
           restartPolicy: OnFailure
 ---
 apiVersion: batch/v1
@@ -56,4 +70,11 @@ spec:
             envFrom:
             - secretRef:
                 name: daily-brief-secret
+            volumeMounts:
+            - name: user-config
+              mountPath: /app/config
+          volumes:
+          - name: user-config
+            persistentVolumeClaim:
+              claimName: daily-brief-config-pvc
           restartPolicy: OnFailure

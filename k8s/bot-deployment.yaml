@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: daily-brief-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: daily-brief-bot
+  template:
+    metadata:
+      labels:
+        app: daily-brief-bot
+    spec:
+      containers:
+      - name: daily-brief-bot
+        image: bogdansee/daily-brief:latest
+        command: ["python3", "src/modules/bot_listener.py"]
+        envFrom:
+        - secretRef:
+            name: daily-brief-secret
+        volumeMounts:
+        - name: user-config
+          mountPath: /app/config
+      volumes:
+      - name: user-config
+        persistentVolumeClaim:
+          claimName: daily-brief-config-pvc
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: daily-brief-config-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
