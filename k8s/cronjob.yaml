@@ -17,3 +17,43 @@ spec:
             - secretRef:
                 name: daily-brief-secret
           restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-brief-noon
+spec:
+  schedule: "0 14 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: daily-brief
+            image: bogdansee/daily-brief:latest
+            command: ["python3", "src/main.py"]
+            args: ["noon"]
+            envFrom:
+            - secretRef:
+                name: daily-brief-secret
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-brief-evening
+spec:
+  schedule: "0 21 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: daily-brief
+            image: bogdansee/daily-brief:latest
+            command: ["python3", "src/main.py"]
+            args: ["evening"]
+            envFrom:
+            - secretRef:
+                name: daily-brief-secret
+          restartPolicy: OnFailure
