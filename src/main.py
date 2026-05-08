@@ -40,12 +40,10 @@ def sep(parts):
     parts.append("─────────────────────")
 
 def ask_city_confirmation(chat_id, city, token):
-    keyboard = [
-        [
-            {"text": f"✅ Da, sunt în {city}", "callback_data": "city_confirm"},
-            {"text": "🔄 Sunt în alt oraș", "callback_data": "city_change"}
-        ]
-    ]
+    keyboard = [[
+        {"text": f"✅ Da, sunt în {city}", "callback_data": "city_confirm"},
+        {"text": "🔄 Sunt în alt oraș", "callback_data": "city_change"}
+    ]]
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     requests.post(url, json={
         "chat_id": chat_id,
@@ -54,16 +52,14 @@ def ask_city_confirmation(chat_id, city, token):
         "reply_markup": {"inline_keyboard": keyboard}
     }, timeout=10)
 
-def run_morning():
+def run_morning(chat_id, user_data):
     now = datetime.now()
     zile = ['Luni','Marti','Miercuri','Joi','Vineri','Sambata','Duminica']
     zi = zile[now.weekday()]
     data = now.strftime('%d %B %Y')
     parts, errors = [], []
 
-    config = load_config()
-
-    name = next(iter(config.values())).get("name", "") if config else ""
+    name = user_data.get("name", "")
     parts.append(f"🌅 <b>Buna dimineata, {name}!</b>\n📅 {zi}, {data}\n")
     sep(parts)
     add_module("Vreme", get_weather, parts, errors)
@@ -84,19 +80,20 @@ def run_morning():
     sep(parts)
     add_module("Nasteri", get_birthdays, parts, errors)
     sep(parts)
-    add_module("Horoscop", get_horoscope, parts, errors)
+    add_module("Horoscop", get_horoscope, parts, errors, chat_id)
     sep(parts)
     add_module("Melodia zilei", get_song, parts, errors)
     sep(parts)
     add_module("Citat", get_quote, parts, errors)
 
-    return "\n".join(parts), errors, config
+    return "\n".join(parts), errors
 
-def run_noon():
+def run_noon(chat_id, user_data):
     now = datetime.now()
     parts, errors = [], []
 
-    parts.append(f"☀️ <b>Buna ziua!</b>\n⏰ Briefing de pranz — {now.strftime('%H:%M')}\n")
+    name = user_data.get("name", "")
+    parts.append(f"☀️ <b>Buna ziua, {name}!</b>\n⏰ Briefing de pranz — {now.strftime('%H:%M')}\n")
     sep(parts)
     add_module("Vreme", get_weather, parts, errors)
     sep(parts)
@@ -121,11 +118,12 @@ def run_noon():
 
     return "\n".join(parts), errors
 
-def run_evening():
+def run_evening(chat_id, user_data):
     now = datetime.now()
     parts, errors = [], []
 
-    parts.append(f"🌙 <b>Buna seara!</b>\n⏰ Briefing de seara — {now.strftime('%H:%M')}\n")
+    name = user_data.get("name", "")
+    parts.append(f"🌙 <b>Buna seara, {name}!</b>\n⏰ Briefing de seara — {now.strftime('%H:%M')}\n")
     sep(parts)
     add_module("Stiri Interne", get_news, parts, errors)
     sep(parts)
@@ -150,44 +148,38 @@ def run(mode="morning"):
 
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Pornesc Daily Brief ({mode})...")
 
-    if mode == "morning":
-        message, errors, config = run_morning()
-
-        # Trimite mesajul
-        result = send_brief(message)
-        if result.get('ok'):
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Mesaj trimis cu succes!")
-        else:
-            errors.append(f"Telegram send failed: {result}")
-
-        # Intreaba fiecare user despre oras
-        for chat_id, user_data in config.items():
-            city = user_data.get("city", "")
-            if city and TOKEN:
-                ask_city_confirmation(chat_id, city, TOKEN)
-
-    elif mode == "noon":
-        message, errors = run_noon()
-        result = send_brief(message)
-        if result.get('ok'):
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Mesaj trimis cu succes!")
-        else:
-            errors.append(f"Telegram send failed: {result}")
-
-    elif mode == "evening":
-        message, errors = run_evening()
-        result = send_brief(message)
-        if result.get('ok'):
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Mesaj trimis cu succes!")
-        else:
-            errors.append(f"Telegram send failed: {result}")
-
-    else:
-        print(f"Mod necunoscut: {mode}")
+    config = load_config()
+    if not config:
+        print("Nu exista utilizatori in config!")
         return
 
-    if errors:
-        send_alert(f"Erori Daily Brief ({mode}):\n" + "\n".join(errors))
+    for chat_id, user_data in config.items():
+        name = user_data.get("name", chat_id)
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] Trimit la {name}...")
+        errors = []
+
+        if mode == "morning":
+            message, errors = run_morning(chat_id, user_data)
+            result = send_brief(message, chat_id=chat_id)
+            if TOKEN:
+                ask_city_confirmation(chat_id, user_data.get("city", ""), TOKEN)
+        elif mode == "noon":
+            message, errors = run_noon(chat_id, user_data)
+            result = send_brief(message, chat_id=chat_id)
+        elif mode == "evening":
+            message, errors = run_evening(chat_id, user_data)
+            result = send_brief(message, chat_id=chat_id)
+        else:
+            print(f"Mod necunoscut: {mode}")
+            return
+
+        if result.get('ok'):
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] ✅ Trimis cu succes la {name}!")
+        else:
+            errors.append(f"Telegram send failed: {result}")
+
+        if errors:
+            send_alert(f"Erori Daily Brief ({mode}) pentru {name}:\n" + "\n".join(errors))
 
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Done.")
 
