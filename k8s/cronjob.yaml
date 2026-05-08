@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-brief-morning
+spec:
+  schedule: "0 8 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: daily-brief
+            image: bogdansee/daily-brief:latest
+            command: ["python3", "src/main.py"]
+            args: ["morning"]
+            envFrom:
+            - secretRef:
+                name: daily-brief-secret
+          restartPolicy: OnFailure
