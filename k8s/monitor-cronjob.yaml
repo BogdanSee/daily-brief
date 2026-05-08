@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-brief-monitor
+spec:
+  schedule: "*/30 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: k8s-monitor
+            image: bogdansee/daily-brief:latest
+            command: ["python3", "src/modules/k8s_monitor.py"]
+            envFrom:
+            - secretRef:
+                name: daily-brief-secret
+            volumeMounts:
+            - name: user-config
+              mountPath: /app/config
+          volumes:
+          - name: user-config
+            persistentVolumeClaim:
+              claimName: daily-brief-config-pvc
+          serviceAccountName: daily-brief-monitor-sa
+          restartPolicy: OnFailure
