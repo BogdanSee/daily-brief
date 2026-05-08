@@ -87,7 +87,7 @@ def get_weather(chat_id=None):
 
         message = (
             f"🌤 <b>Vremea în {city}</b>\n"
-            f"🌡 Acum: <b>{temp}°C</b> (se simte {feels_like}°C)\n"
+            f"🌡 Acum: <b>{round(temp,1)}°C</b> (se simte {round(feels_like,1)}°C)\n"
             f"📊 Azi: min <b>{temp_min}°C</b> / max <b>{temp_max}°C</b>\n"
             f"☁️ Condiții: {description.capitalize()}\n"
             f"💧 Umiditate: {humidity}% | 💨 Vânt: {wind_speed} m/s | ☁️ Nori: {clouds}%\n"

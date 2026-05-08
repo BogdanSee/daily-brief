@@ -125,13 +125,13 @@ def run_evening(chat_id, user_data):
     name = user_data.get("name", "")
     parts.append(f"🌙 <b>Buna seara, {name}!</b>\n⏰ Briefing de seara — {now.strftime('%H:%M')}\n")
     sep(parts)
-    add_module("Stiri Interne", get_news, parts, errors)
-    sep(parts)
-    add_module("Stiri Internationale", get_news_global, parts, errors)
-    sep(parts)
     add_module("Vreme azi", get_weather, parts, errors)
     sep(parts)
     add_module("Vreme maine", get_weather_tomorrow, parts, errors)
+    sep(parts)
+    add_module("Stiri Interne", get_news, parts, errors)
+    sep(parts)
+    add_module("Stiri Internationale", get_news_global, parts, errors)
     sep(parts)
     parts.append(
         f"📋 <b>Sumar zilei</b>\n"
