@@ -1,9 +1,10 @@
 pipeline {
     agent any
-
     environment {
         DOCKER_IMAGE = 'bogdansee/daily-brief'
         DOCKER_CREDENTIALS = 'dockerhub-credentials'
+        TELEGRAM_TOKEN = credentials('telegram-alert-token')
+        TELEGRAM_CHAT_ID = credentials('telegram-alert-chat-id')
     }
 
     stages {
@@ -32,14 +33,42 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy Morning') {
+            steps {
+                sh "kubectl create job deploy-morning-${BUILD_NUMBER} --from=cronjob/daily-brief-morning || true"
+            }
+        }
+
+        stage('Deploy Noon') {
+            steps {
+                sh "kubectl create job deploy-noon-${BUILD_NUMBER} --from=cronjob/daily-brief-noon || true"
+            }
+        }
+
+        stage('Deploy Evening') {
+            steps {
+                sh "kubectl create job deploy-evening-${BUILD_NUMBER} --from=cronjob/daily-brief-evening || true"
+            }
+        }
     }
 
     post {
         success {
-            echo "✅ Build ${BUILD_NUMBER} deployed successfully!"
+            sh """
+                curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+                -d chat_id=${TELEGRAM_CHAT_ID} \
+                -d parse_mode=HTML \
+                -d text="✅ <b>DailyBrief Build #${BUILD_NUMBER}</b> reusit!%0A📦 Imagine: ${DOCKER_IMAGE}:${BUILD_NUMBER}%0A⏱ Durata: ${currentBuild.durationString}"
+            """
         }
         failure {
-            echo "❌ Build ${BUILD_NUMBER} failed!"
+            sh """
+                curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+                -d chat_id=${TELEGRAM_CHAT_ID} \
+                -d parse_mode=HTML \
+                -d text="❌ <b>DailyBrief Build #${BUILD_NUMBER}</b> a esuat!%0A🔍 Verifica: ${BUILD_URL}"
+            """
         }
     }
 }
