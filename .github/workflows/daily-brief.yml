@@ -2,9 +2,9 @@ name: DailyBrief Scheduler
 
 on:
   schedule:
-    - cron: '0 6 * * *'   # ~08:00-09:00 Romania (UTC+3)
-    - cron: '0 11 * * *'  # ~13:00-14:00 Romania (UTC+3)
-    - cron: '0 18 * * *'  # ~20:00-21:00 Romania (UTC+3)
+    - cron: '30 4 * * *'   # ~08:00-09:00 Romania (UTC+3)
+    - cron: '30 9 * * *'  # ~13:00-14:00 Romania (UTC+3)
+    - cron: '30 16 * * *'  # ~20:00-21:00 Romania (UTC+3)
   workflow_dispatch:
 
 jobs:
