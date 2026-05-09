@@ -128,7 +128,6 @@ def run_bot():
                             "Hai să te configurez rapid.\n"
                             "✏️ <b>Cum te numești?</b>"
                         )
-
                 elif text == "/setzodiac":
                     send_zodiac_keyboard(chat_id)
 
@@ -178,7 +177,14 @@ def run_bot():
                                 save_config(config)
                                 sync_config()
                                 del pending_setup[chat_id]
-                                send_message(chat_id, f"✅ Oraș actualizat: <b>{city_name}</b>")
+                                send_message(chat_id, f"✅ Oraș actualizat: <b>{city_name}</b>\nPregatesc briefing-ul pentru noul tau oras...")
+                                # Trimite mesajul de dimineata cu datele din noul oras
+                                import sys
+                                sys.path.insert(0, 'src')
+                                from main import run_morning
+                                from notifier import send_brief
+                                message, errors = run_morning(chat_id, config[chat_id])
+                                send_brief(message, chat_id=chat_id)  
                         else:
                             send_message(chat_id, "❌ Nu am găsit orașul. Încearcă din nou:")
 
