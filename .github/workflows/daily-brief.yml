@@ -2,10 +2,10 @@ name: DailyBrief Scheduler
 
 on:
   schedule:
-    - cron: '0 5 * * *'   # 08:00 Romania (UTC+3)
-    - cron: '0 11 * * *'  # 14:00 Romania (UTC+3)
-    - cron: '0 18 * * *'  # 21:00 Romania (UTC+3)
-  workflow_dispatch:       # Permite rulare manuala
+    - cron: '0 6 * * *'   # ~08:00-09:00 Romania (UTC+3)
+    - cron: '0 11 * * *'  # ~13:00-14:00 Romania (UTC+3)
+    - cron: '0 18 * * *'  # ~20:00-21:00 Romania (UTC+3)
+  workflow_dispatch:
 
 jobs:
   send-brief:
@@ -37,6 +37,7 @@ jobs:
           echo "DEFAULT_CITY=Bucharest" >> config/.env
           echo "DEFAULT_LAT=44.4268" >> config/.env
           echo "DEFAULT_LON=26.1025" >> config/.env
+          echo "GITHUB_TOKEN=${{ secrets.GH_TOKEN_SYNC }}" >> config/.env
 
       - name: Create user config
         run: echo '${{ secrets.USER_CONFIG }}' > config/user_config.json
@@ -45,7 +46,7 @@ jobs:
         id: timeslot
         run: |
           HOUR=$(date -u +%H)
-          if [ "$HOUR" = "05" ]; then
+          if [ "$HOUR" = "06" ]; then
             echo "mode=morning" >> $GITHUB_OUTPUT
           elif [ "$HOUR" = "11" ]; then
             echo "mode=noon" >> $GITHUB_OUTPUT
