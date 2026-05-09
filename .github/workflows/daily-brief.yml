@@ -1,0 +1,59 @@
+name: DailyBrief Scheduler
+
+on:
+  schedule:
+    - cron: '0 5 * * *'   # 08:00 Romania (UTC+3)
+    - cron: '0 11 * * *'  # 14:00 Romania (UTC+3)
+    - cron: '0 18 * * *'  # 21:00 Romania (UTC+3)
+  workflow_dispatch:       # Permite rulare manuala
+
+jobs:
+  send-brief:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create config directory
+        run: mkdir -p config
+
+      - name: Create .env file
+        run: |
+          echo "TELEGRAM_BRIEF_TOKEN=${{ secrets.TELEGRAM_BRIEF_TOKEN }}" > config/.env
+          echo "TELEGRAM_ALERT_TOKEN=${{ secrets.TELEGRAM_ALERT_TOKEN }}" >> config/.env
+          echo "TELEGRAM_ALERT_CHAT_ID=${{ secrets.TELEGRAM_ALERT_CHAT_ID }}" >> config/.env
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> config/.env
+          echo "OPENWEATHER_API_KEY=${{ secrets.OPENWEATHER_API_KEY }}" >> config/.env
+          echo "NEWS_API_KEY=${{ secrets.NEWS_API_KEY }}" >> config/.env
+          echo "DEFAULT_CITY=Bucharest" >> config/.env
+          echo "DEFAULT_LAT=44.4268" >> config/.env
+          echo "DEFAULT_LON=26.1025" >> config/.env
+
+      - name: Create user config
+        run: echo '${{ secrets.USER_CONFIG }}' > config/user_config.json
+
+      - name: Determine time slot
+        id: timeslot
+        run: |
+          HOUR=$(date -u +%H)
+          if [ "$HOUR" = "05" ]; then
+            echo "mode=morning" >> $GITHUB_OUTPUT
+          elif [ "$HOUR" = "11" ]; then
+            echo "mode=noon" >> $GITHUB_OUTPUT
+          elif [ "$HOUR" = "18" ]; then
+            echo "mode=evening" >> $GITHUB_OUTPUT
+          else
+            echo "mode=morning" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Daily Brief
+        run: python3 src/main.py ${{ steps.timeslot.outputs.mode }}
