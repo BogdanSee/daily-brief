@@ -3,6 +3,7 @@ import json
 import requests
 from pathlib import Path
 from dotenv import load_dotenv
+from github_sync import sync_config
 
 load_dotenv(Path(__file__).resolve().parents[2] / "config/.env")
 
@@ -34,6 +35,7 @@ def save_config(data):
     CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(CONFIG_FILE, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+    sync_config()
 
 def send_message(chat_id, text, parse_mode="HTML"):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -62,18 +64,21 @@ def send_zodiac_keyboard(chat_id):
 
 def geocode_city(city):
     try:
+        # Cautam in Romania intai
         url = f"https://nominatim.openstreetmap.org/search?q={city},Romania&format=json&limit=1"
         headers = {"User-Agent": "DailyBriefBot/1.0"}
         resp = requests.get(url, headers=headers, timeout=10)
         data = resp.json()
-        if data:
+        if data and data[0].get('type') in ['city', 'town', 'village', 'municipality', 'administrative']:
             return float(data[0]['lat']), float(data[0]['lon']), data[0]['display_name'].split(',')[0]
-        # Daca nu gasim in Romania, cautam global
+        
+        # Cautam global
         url2 = f"https://nominatim.openstreetmap.org/search?q={city}&format=json&limit=1"
         resp2 = requests.get(url2, headers=headers, timeout=10)
         data2 = resp2.json()
-        if data2:
+        if data2 and data2[0].get('type') in ['city', 'town', 'village', 'municipality', 'administrative']:
             return float(data2[0]['lat']), float(data2[0]['lon']), data2[0]['display_name'].split(',')[0]
+        
         return None, None, None
     except Exception:
         return None, None, None
@@ -167,9 +172,11 @@ def run_bot():
                                 config[chat_id]["name"] = pending_setup[chat_id].get("name", text)
                                 pending_setup[chat_id]["step"] = "zodiac"
                                 save_config(config)
+                                sync_config()
                                 send_zodiac_keyboard(chat_id)
                             else:
                                 save_config(config)
+                                sync_config()
                                 del pending_setup[chat_id]
                                 send_message(chat_id, f"✅ Oraș actualizat: <b>{city_name}</b>")
                         else:
@@ -190,6 +197,7 @@ def run_bot():
                             config[chat_id] = {}
                         config[chat_id]["zodiac"] = sign
                         save_config(config)
+                        sync_config()
 
                         if chat_id in pending_setup:
                             del pending_setup[chat_id]
